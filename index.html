@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindFlow — Organização Pessoal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <!-- Auth Screen -->
+  <div id="auth-screen">
+    <div class="auth-container">
+      <div class="auth-logo">
+        <h1>MindFlow</h1>
+        <p>Organização consciente</p>
+      </div>
+      
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="showAuthTab('login')">Entrar</button>
+          <button class="auth-tab" onclick="showAuthTab('signup')">Criar conta</button>
+        </div>
+        
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="input" id="login-email" required placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha</label>
+            <input type="password" class="input" id="login-password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-accent btn-full">Entrar</button>
+          <div id="login-error" class="auth-error"></div>
+        </form>
+        
+        <!-- Signup Form -->
+        <form id="signup-form" class="auth-form" style="display:none" onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="input" id="signup-email" required placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha</label>
+            <input type="password" class="input" id="signup-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar senha</label>
+            <input type="password" class="input" id="signup-password-confirm" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-accent btn-full">Criar conta</button>
+          <div id="signup-error" class="auth-error"></div>
+          <div id="signup-success" class="auth-success"></div>
+        </form>
+        
+        <div class="auth-divider">
+          <span>ou</span>
+        </div>
+        
+        <button class="btn btn-google" onclick="handleGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar com Google
+        </button>
+      </div>
+      
+      <p class="auth-footer">
+        Seus dados ficam seguros e sincronizados
+      </p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" style="display:none">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-logo">
+        <h1>MindFlow</h1>
+        <p>Organização consciente</p>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Visão</div>
+        <div class="nav-item active" onclick="navigate('dashboard')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+          Visão geral
+        </div>
+        <div class="nav-item" onclick="navigate('calendar')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M1 6h14"/><path d="M5 1v2M11 1v2"/></svg>
+          Calendário
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Registro</div>
+        <div class="nav-item" onclick="navigate('daily')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2.5 1.5"/></svg>
+          Log diário
+        </div>
+        <div class="nav-item" onclick="navigate('weekly')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4h14M1 8h14M1 12h8"/></svg>
+          Semana
+        </div>
+        <div class="nav-item" onclick="navigate('monthly')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="1.5"/><path d="M1 5.5h14"/></svg>
+          Mês
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Objetivos</div>
+        <div class="nav-item" onclick="navigate('goals')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
+          Metas
+        </div>
+        <div class="nav-item" onclick="navigate('gratitude')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 13.5C4 11 1 8.5 1 5.5A3.5 3.5 0 0 1 8 3.8 3.5 3.5 0 0 1 15 5.5c0 3-3 5.5-7 8z"/></svg>
+          Gratidão
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Bem-estar</div>
+        <div class="nav-item" onclick="navigate('breathe')">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.8 2 4 4.2 4 7c0 3.5 2 5 4 7 2-2 4-3.5 4-7 0-2.8-1.8-5-4-5z"/></svg>
+          Respiração
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-info" id="user-info"></div>
+        <button class="btn btn-small" onclick="handleLogout()">Sair</button>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main">
+      <!-- Dashboard -->
+      <section class="view active" id="view-dashboard">
+        <div class="view-header">
+          <div>
+            <div class="view-title" id="greeting">Bom dia ✦</div>
+            <div class="view-subtitle" id="todayLabel"></div>
+          </div>
+          <button class="btn btn-accent" onclick="navigate('daily')">+ Novo registro</button>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-label">✦ Reflexão do dia</div>
+          <div class="insight-text" id="dailyQuote"></div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="stat-card">
+            <div class="stat-label">Tarefas hoje</div>
+            <div class="stat-value" id="statTasksDone">0/0</div>
+            <div class="stat-sub">concluídas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sequência</div>
+            <div class="stat-value" id="statStreak">0</div>
+            <div class="stat-sub">dias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Metas ativas</div>
+            <div class="stat-value" id="statGoals">0</div>
+            <div class="stat-sub">em progresso</div>
+          </div>
+        </div>
+
+        <div class="dash-2col">
+          <div class="card">
+            <div class="card-title">Progresso das metas</div>
+            <div id="dashGoalsList"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Humor da semana</div>
+            <div id="moodChart" class="mood-chart"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Daily Log -->
+      <section class="view" id="view-daily">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Log Diário</div>
+            <div class="view-subtitle" id="dailyDateLabel"></div>
+          </div>
+        </div>
+
+        <div class="day-tabs">
+          <div class="day-tab active" onclick="switchTab('tasks')">Tarefas</div>
+          <div class="day-tab" onclick="switchTab('reflect')">Reflexão</div>
+          <div class="day-tab" onclick="switchTab('notes')">Anotações</div>
+        </div>
+
+        <div class="tab-content active" id="tab-tasks">
+          <div class="task-input-row">
+            <input class="input" id="taskInput" placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter') addTask()">
+            <select class="input" id="taskCat" style="flex:0;width:120px">
+              <option value="pessoal">Pessoal</option>
+              <option value="trabalho">Trabalho</option>
+              <option value="saude">Saúde</option>
+              <option value="terapia">Terapia</option>
+            </select>
+            <button class="btn btn-accent" onclick="addTask()">+ Adicionar</button>
+          </div>
+          <div class="task-list" id="taskList"></div>
+        </div>
+
+        <div class="tab-content" id="tab-reflect">
+          <div class="reflection-grid">
+            <div class="reflect-card">
+              <div class="reflect-label">🌅 Como acordei</div>
+              <textarea class="input" id="r_morning" placeholder="Como foi acordar hoje?"></textarea>
+            </div>
+            <div class="reflect-card">
+              <div class="reflect-label">🧠 Pensamentos</div>
+              <textarea class="input" id="r_thoughts" placeholder="Que pensamentos surgiram?"></textarea>
+            </div>
+            <div class="reflect-card">
+              <div class="reflect-label">💛 Emoções</div>
+              <textarea class="input" id="r_emotions" placeholder="Quais emoções notei?"></textarea>
+            </div>
+            <div class="reflect-card">
+              <div class="reflect-label">🌿 Autocompaixão</div>
+              <textarea class="input" id="r_selfcare" placeholder="O que fiz por mim?"></textarea>
+            </div>
+          </div>
+          <div class="reflect-card" style="margin-bottom:14px">
+            <div class="reflect-label">🌙 Revisão do dia</div>
+            <textarea class="input" style="min-height:100px" id="r_evening" placeholder="Como foi o dia?"></textarea>
+          </div>
+          <button class="btn btn-accent" onclick="saveReflections()">Salvar reflexões</button>
+        </div>
+
+        <div class="tab-content" id="tab-notes">
+          <div class="card">
+            <div class="card-title">Escrita livre</div>
+            <textarea class="input" id="freeNotes" style="min-height:280px;width:100%" placeholder="Este espaço é só seu..."></textarea>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn btn-accent" onclick="saveFreeNotes()">Salvar</button>
+              <span style="font-size:11px;color:var(--text3);margin-left:auto;align-self:center" id="notesStatus"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Goals -->
+      <section class="view" id="view-goals">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Metas & Objetivos</div>
+            <div class="view-subtitle">Acompanhe seu progresso</div>
+          </div>
+          <button class="btn btn-accent" onclick="openGoalModal()">+ Nova meta</button>
+        </div>
+
+        <div class="goal-filters" id="goalFilters">
+          <button class="filter-btn active" onclick="filterGoals('all')">Todas</button>
+          <button class="filter-btn" onclick="filterGoals('saude')">Saúde</button>
+          <button class="filter-btn" onclick="filterGoals('pessoal')">Pessoal</button>
+          <button class="filter-btn" onclick="filterGoals('profissional')">Profissional</button>
+        </div>
+
+        <div class="goals-list" id="goalsList"></div>
+      </section>
+
+      <!-- Gratitude -->
+      <section class="view" id="view-gratitude">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Diário de Gratidão</div>
+            <div class="view-subtitle">Pequenas percepções, grande transformação</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="task-input-row">
+            <input class="input" id="gratitudeInput" placeholder="Pelo que você é grato hoje?" onkeydown="if(event.key==='Enter') addGratitude()">
+            <button class="btn btn-accent" onclick="addGratitude()">+ Registrar</button>
+          </div>
+        </div>
+
+        <div class="gratitude-list" id="gratitudeList"></div>
+      </section>
+
+      <!-- Breathe -->
+      <section class="view" id="view-breathe">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Respiração Consciente</div>
+            <div class="view-subtitle">Regule seu sistema nervoso</div>
+          </div>
+        </div>
+
+        <div class="breath-grid">
+          <div class="card">
+            <div class="card-title">Técnica</div>
+            <div class="breath-options">
+              <div class="breath-option active" onclick="selectBreath('478')" id="bt-478">
+                <strong>4-7-8 (Calmante)</strong>
+                <span>Inspira 4s · Retém 7s · Expira 8s</span>
+              </div>
+              <div class="breath-option" onclick="selectBreath('box')" id="bt-box">
+                <strong>Box Breathing</strong>
+                <span>4s em cada fase</span>
+              </div>
+              <div class="breath-option" onclick="selectBreath('physio')" id="bt-physio">
+                <strong>Suspiro fisiológico</strong>
+                <span>Dupla inspiração + longa expiração</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Prática</div>
+            <div class="breath-container">
+              <div class="breath-circle" id="breathCircle" onclick="startBreath()">Toque para<br>iniciar</div>
+              <div class="breath-instruction" id="breathInstruction">Respire naturalmente</div>
+              <div class="breath-count">Ciclos: <span id="cycleCount">0</span>/5</div>
+            </div>
+            <button class="btn" style="width:100%" onclick="stopBreath()">Parar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Other views will be added similarly -->
+      <section class="view" id="view-calendar">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Calendário</div>
+            <div class="view-subtitle">Em breve...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-weekly">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Visão Semanal</div>
+            <div class="view-subtitle">Em breve...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-monthly">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Visão Mensal</div>
+            <div class="view-subtitle">Em breve...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-title" id="goalModalTitle">Nova meta</div>
+      <div class="form-group">
+        <label class="form-label">Título da meta</label>
+        <input class="input" id="gTitle" placeholder="O que você quer alcançar?" style="width:100%">
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Categoria</label>
+          <select class="input" id="gCat" style="width:100%">
+            <option value="pessoal">Pessoal</option>
+            <option value="saude">Saúde</option>
+            <option value="profissional">Profissional</option>
+            <option value="relacional">Relacional</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Prazo</label>
+          <input class="input" type="date" id="gDeadline" style="width:100%">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Por que é importante?</label>
+        <textarea class="input" id="gWhy" style="width:100%;min-height:70px" placeholder="Seu propósito..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Passos <span id="gProgressLabel" style="color:var(--accent3);margin-left:6px">0%</span></label>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input class="input" id="gStepInput" placeholder="Adicionar passo..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addGoalStep()}">
+          <button class="btn" onclick="addGoalStep()">+ Passo</button>
+        </div>
+        <div id="gStepsList" class="steps-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeGoalModal()">Cancelar</button>
+        <button class="btn btn-accent" onclick="saveGoal()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
