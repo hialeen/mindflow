@@ -327,32 +327,104 @@
         </div>
       </section>
 
-      <!-- Other views will be added similarly -->
+      <!-- Calendar -->
       <section class="view" id="view-calendar">
         <div class="view-header">
           <div>
             <div class="view-title">Calendário</div>
-            <div class="view-subtitle">Em breve...</div>
+            <div class="view-subtitle" id="calendarMonthLabel"></div>
+          </div>
+          <div class="calendar-nav">
+            <button class="btn" onclick="changeMonth(-1)">← Anterior</button>
+            <button class="btn" onclick="goToToday()">Hoje</button>
+            <button class="btn" onclick="changeMonth(1)">Próximo →</button>
+          </div>
+        </div>
+
+        <div class="calendar-layout">
+          <div class="calendar-main">
+            <div class="calendar-container">
+              <div class="calendar-header">
+                <div class="calendar-weekday">Dom</div>
+                <div class="calendar-weekday">Seg</div>
+                <div class="calendar-weekday">Ter</div>
+                <div class="calendar-weekday">Qua</div>
+                <div class="calendar-weekday">Qui</div>
+                <div class="calendar-weekday">Sex</div>
+                <div class="calendar-weekday">Sáb</div>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+          </div>
+
+          <div class="calendar-sidebar">
+            <div class="card">
+              <div class="card-title" id="selectedDayLabel">Selecione um dia</div>
+              <div id="dayEvents"></div>
+              <button class="btn btn-accent" style="width:100%;margin-top:12px" onclick="openEventModal()">+ Novo evento</button>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- Weekly -->
       <section class="view" id="view-weekly">
         <div class="view-header">
           <div>
             <div class="view-title">Visão Semanal</div>
-            <div class="view-subtitle">Em breve...</div>
+            <div class="view-subtitle" id="weekLabel"></div>
+          </div>
+          <div class="calendar-nav">
+            <button class="btn" onclick="changeWeek(-1)">← Anterior</button>
+            <button class="btn" onclick="goToCurrentWeek()">Esta semana</button>
+            <button class="btn" onclick="changeWeek(1)">Próxima →</button>
           </div>
         </div>
+
+        <div class="week-overview">
+          <div class="week-days" id="weekDays"></div>
+        </div>
+
+        <div class="week-reflection-grid">
+          <div class="card">
+            <div class="card-title">🎯 Intenção da semana</div>
+            <textarea class="input" id="weekIntention" style="min-height:120px;width:100%" placeholder="O que você quer focar esta semana? Quais são suas prioridades?"></textarea>
+          </div>
+          <div class="card">
+            <div class="card-title">📝 Revisão da semana</div>
+            <textarea class="input" id="weekReview" style="min-height:120px;width:100%" placeholder="Como foi a semana? O que funcionou? O que pode melhorar?"></textarea>
+          </div>
+        </div>
+        <button class="btn btn-accent" onclick="saveWeekReflection()" style="margin-top:16px">Salvar reflexão semanal</button>
       </section>
 
+      <!-- Monthly -->
       <section class="view" id="view-monthly">
         <div class="view-header">
           <div>
             <div class="view-title">Visão Mensal</div>
-            <div class="view-subtitle">Em breve...</div>
+            <div class="view-subtitle" id="monthLabel"></div>
+          </div>
+          <div class="calendar-nav">
+            <button class="btn" onclick="changeReflectionMonth(-1)">← Anterior</button>
+            <button class="btn" onclick="goToCurrentMonth()">Este mês</button>
+            <button class="btn" onclick="changeReflectionMonth(1)">Próximo →</button>
           </div>
         </div>
+
+        <div class="month-stats" id="monthStats"></div>
+
+        <div class="week-reflection-grid">
+          <div class="card">
+            <div class="card-title">🏆 Maior conquista do mês</div>
+            <textarea class="input" id="monthWin" style="min-height:120px;width:100%" placeholder="Qual foi sua maior vitória este mês? Do que você mais se orgulha?"></textarea>
+          </div>
+          <div class="card">
+            <div class="card-title">💡 Principal aprendizado</div>
+            <textarea class="input" id="monthLearning" style="min-height:120px;width:100%" placeholder="O que você aprendeu? Que insight teve sobre si mesmo?"></textarea>
+          </div>
+        </div>
+        <button class="btn btn-accent" onclick="saveMonthReflection()" style="margin-top:16px">Salvar reflexão mensal</button>
       </section>
     </main>
   </div>
@@ -395,6 +467,40 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeGoalModal()">Cancelar</button>
         <button class="btn btn-accent" onclick="saveGoal()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Modal -->
+  <div class="modal-overlay" id="eventModal">
+    <div class="modal">
+      <div class="modal-title">Novo evento</div>
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="input" id="eventTitle" placeholder="Nome do evento" style="width:100%">
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Data</label>
+          <input class="input" type="date" id="eventDate" style="width:100%">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Tipo</label>
+          <select class="input" id="eventType" style="width:100%">
+            <option value="personal">Pessoal</option>
+            <option value="work">Trabalho</option>
+            <option value="health">Saúde</option>
+            <option value="social">Social</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <textarea class="input" id="eventNotes" style="width:100%;min-height:60px" placeholder="Detalhes do evento..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeEventModal()">Cancelar</button>
+        <button class="btn btn-accent" onclick="saveEvent()">Salvar</button>
       </div>
     </div>
   </div>
