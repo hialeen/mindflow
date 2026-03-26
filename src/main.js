@@ -6,18 +6,48 @@ let currentUser = null
 let goals = []
 let tasks = []
 let gratitudes = []
+let events = []
 let goalFilter = 'all'
 let gModalSteps = []
 let editingGoalId = null
+
+// Calendar state
+let calendarDate = new Date()
+let selectedDate = null
+
+// Week state
+let weekStartDate = null
+
+// Month reflection state
+let reflectionMonth = new Date()
 
 // ─── DATE UTILS ──────────────────────────────────────────────────
 const today = new Date()
 const todayKey = today.toISOString().split('T')[0]
 const daysNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const daysFullNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 function fmtDate(d) {
   return `${d.getDate()} de ${monthNames[d.getMonth()]} de ${d.getFullYear()}`
+}
+
+function dateKey(d) {
+  return d.toISOString().split('T')[0]
+}
+
+function getWeekStart(d) {
+  const date = new Date(d)
+  const day = date.getDay()
+  date.setDate(date.getDate() - day)
+  return date
+}
+
+function getWeekEnd(d) {
+  const date = new Date(d)
+  const day = date.getDay()
+  date.setDate(date.getDate() + (6 - day))
+  return date
 }
 
 // ─── QUOTES ──────────────────────────────────────────────────────
@@ -33,6 +63,8 @@ const quotes = [
   "Observe seus padrões com gentileza, não com julgamento.",
   "O progresso não é linear — e tudo bem."
 ]
+
+const moodEmojis = ['😢', '😔', '😐', '🙂', '😊']
 
 // ─── TOAST ───────────────────────────────────────────────────────
 function toast(msg) {
@@ -50,7 +82,6 @@ window.showAuthTab = function(tab) {
   document.getElementById('login-form').style.display = tab === 'login' ? 'flex' : 'none'
   document.getElementById('signup-form').style.display = tab === 'signup' ? 'flex' : 'none'
   
-  // Clear errors
   document.getElementById('login-error').textContent = ''
   document.getElementById('signup-error').textContent = ''
   document.getElementById('signup-success').textContent = ''
@@ -124,17 +155,14 @@ function showApp(user) {
   document.getElementById('auth-screen').style.display = 'none'
   document.getElementById('app').style.display = 'flex'
   
-  // Update user info
   document.getElementById('user-info').textContent = user.email
   
-  // Set greeting based on time
   const hour = new Date().getHours()
   let greeting = 'Bom dia'
   if (hour >= 12 && hour < 18) greeting = 'Boa tarde'
   else if (hour >= 18) greeting = 'Boa noite'
   document.getElementById('greeting').textContent = greeting + ' ✦'
   
-  // Load initial data
   loadDashboard()
 }
 
@@ -149,6 +177,9 @@ window.navigate = function(view) {
   if (view === 'daily') loadDaily()
   if (view === 'goals') loadGoals()
   if (view === 'gratitude') loadGratitude()
+  if (view === 'calendar') loadCalendar()
+  if (view === 'weekly') loadWeekly()
+  if (view === 'monthly') loadMonthly()
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────
@@ -157,26 +188,21 @@ async function loadDashboard() {
   document.getElementById('dailyQuote').textContent = quotes[today.getDate() % quotes.length]
   
   try {
-    // Load tasks for today
     tasks = await api.getTasks(todayKey)
     const done = tasks.filter(t => t.done).length
     document.getElementById('statTasksDone').textContent = `${done}/${tasks.length}`
     
-    // Load goals
     goals = await api.getGoals()
     const activeGoals = goals.filter(g => calcProgress(g.goal_steps) < 100)
     document.getElementById('statGoals').textContent = activeGoals.length
     
-    // Render goals progress
     renderDashGoals()
     
-    // Load moods for chart
     const weekAgo = new Date(today)
     weekAgo.setDate(today.getDate() - 6)
     const moods = await api.getMoods(weekAgo.toISOString().split('T')[0], todayKey)
     renderMoodChart(moods)
     
-    // Streak (simplified - just count tasks)
     document.getElementById('statStreak').textContent = tasks.length > 0 ? '1' : '0'
     
   } catch (err) {
@@ -347,6 +373,347 @@ window.saveFreeNotes = async function() {
   }
 }
 
+// ─── CALENDAR ────────────────────────────────────────────────────
+async function loadCalendar() {
+  selectedDate = selectedDate || new Date(today)
+  renderCalendar()
+  await loadCalendarData()
+}
+
+function renderCalendar() {
+  const year = calendarDate.getFullYear()
+  const month = calendarDate.getMonth()
+  
+  document.getElementById('calendarMonthLabel').textContent = `${monthNames[month]} de ${year}`
+  
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const startDay = firstDay.getDay()
+  const totalDays = lastDay.getDate()
+  
+  const grid = document.getElementById('calendarGrid')
+  grid.innerHTML = ''
+  
+  // Previous month days
+  const prevMonth = new Date(year, month, 0)
+  for (let i = startDay - 1; i >= 0; i--) {
+    const day = prevMonth.getDate() - i
+    const d = new Date(year, month - 1, day)
+    grid.innerHTML += createDayCell(d, true)
+  }
+  
+  // Current month days
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(year, month, day)
+    grid.innerHTML += createDayCell(d, false)
+  }
+  
+  // Next month days
+  const remaining = 42 - grid.children.length
+  for (let day = 1; day <= remaining; day++) {
+    const d = new Date(year, month + 1, day)
+    grid.innerHTML += createDayCell(d, true)
+  }
+  
+  updateSelectedDayLabel()
+}
+
+function createDayCell(d, isOtherMonth) {
+  const key = dateKey(d)
+  const isToday = key === todayKey
+  const isSelected = selectedDate && key === dateKey(selectedDate)
+  
+  let classes = 'calendar-day'
+  if (isOtherMonth) classes += ' other-month'
+  if (isToday) classes += ' today'
+  if (isSelected) classes += ' selected'
+  
+  return `<div class="${classes}" onclick="selectDay('${key}')" data-date="${key}">
+    <div class="calendar-day-num">${d.getDate()}</div>
+    <div class="calendar-day-dots" id="dots-${key}"></div>
+  </div>`
+}
+
+async function loadCalendarData() {
+  const year = calendarDate.getFullYear()
+  const month = calendarDate.getMonth()
+  const startDate = new Date(year, month, 1)
+  const endDate = new Date(year, month + 1, 0)
+  
+  try {
+    events = await api.getEvents(dateKey(startDate), dateKey(endDate))
+    renderCalendarDots()
+    renderDayEvents()
+  } catch (err) {
+    console.error('Error loading calendar:', err)
+  }
+}
+
+function renderCalendarDots() {
+  // Clear all dots
+  document.querySelectorAll('.calendar-day-dots').forEach(el => el.innerHTML = '')
+  
+  // Add event dots
+  events.forEach(e => {
+    const dotsEl = document.getElementById('dots-' + e.date)
+    if (dotsEl) {
+      dotsEl.innerHTML += '<div class="calendar-dot event"></div>'
+    }
+  })
+}
+
+function renderDayEvents() {
+  if (!selectedDate) return
+  
+  const key = dateKey(selectedDate)
+  const dayEvents = events.filter(e => e.date === key)
+  const container = document.getElementById('dayEvents')
+  
+  if (dayEvents.length === 0) {
+    container.innerHTML = '<div class="no-events">Nenhum evento neste dia</div>'
+    return
+  }
+  
+  container.innerHTML = dayEvents.map(e => `
+    <div class="event-item">
+      <div class="event-dot ${e.type}"></div>
+      <div class="event-info">
+        <div class="event-title">${e.title}</div>
+        ${e.notes ? `<div class="event-notes">${e.notes}</div>` : ''}
+      </div>
+    </div>
+  `).join('')
+}
+
+function updateSelectedDayLabel() {
+  if (!selectedDate) return
+  const label = document.getElementById('selectedDayLabel')
+  label.textContent = `${daysFullNames[selectedDate.getDay()]}, ${selectedDate.getDate()} de ${monthNames[selectedDate.getMonth()]}`
+}
+
+window.selectDay = function(key) {
+  selectedDate = new Date(key + 'T12:00:00')
+  document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'))
+  document.querySelector(`[data-date="${key}"]`)?.classList.add('selected')
+  document.getElementById('eventDate').value = key
+  updateSelectedDayLabel()
+  renderDayEvents()
+}
+
+window.changeMonth = function(delta) {
+  calendarDate.setMonth(calendarDate.getMonth() + delta)
+  renderCalendar()
+  loadCalendarData()
+}
+
+window.goToToday = function() {
+  calendarDate = new Date(today)
+  selectedDate = new Date(today)
+  renderCalendar()
+  loadCalendarData()
+}
+
+window.openEventModal = function() {
+  document.getElementById('eventTitle').value = ''
+  document.getElementById('eventDate').value = selectedDate ? dateKey(selectedDate) : todayKey
+  document.getElementById('eventType').value = 'personal'
+  document.getElementById('eventNotes').value = ''
+  document.getElementById('eventModal').classList.add('open')
+}
+
+window.closeEventModal = function() {
+  document.getElementById('eventModal').classList.remove('open')
+}
+
+window.saveEvent = async function() {
+  const title = document.getElementById('eventTitle').value.trim()
+  if (!title) return
+  
+  const eventData = {
+    title,
+    date: document.getElementById('eventDate').value,
+    type: document.getElementById('eventType').value,
+    notes: document.getElementById('eventNotes').value
+  }
+  
+  try {
+    const newEvent = await api.createEvent(eventData)
+    events.push(newEvent)
+    closeEventModal()
+    renderCalendarDots()
+    renderDayEvents()
+    toast('Evento criado ✓')
+  } catch (err) {
+    console.error('Error saving event:', err)
+    toast('Erro ao criar evento')
+  }
+}
+
+// ─── WEEKLY ──────────────────────────────────────────────────────
+async function loadWeekly() {
+  if (!weekStartDate) {
+    weekStartDate = getWeekStart(today)
+  }
+  
+  const weekEnd = getWeekEnd(weekStartDate)
+  document.getElementById('weekLabel').textContent = `${weekStartDate.getDate()} de ${monthNames[weekStartDate.getMonth()]} — ${weekEnd.getDate()} de ${monthNames[weekEnd.getMonth()]}`
+  
+  try {
+    // Load tasks and moods for the week
+    const startKey = dateKey(weekStartDate)
+    const endKey = dateKey(weekEnd)
+    const weekMoods = await api.getMoods(startKey, endKey)
+    
+    renderWeekDays(weekMoods)
+    
+    // Load week reflection
+    const weekReflection = await api.getWeekReflection(startKey)
+    if (weekReflection) {
+      document.getElementById('weekIntention').value = weekReflection.intention || ''
+      document.getElementById('weekReview').value = weekReflection.review || ''
+    } else {
+      document.getElementById('weekIntention').value = ''
+      document.getElementById('weekReview').value = ''
+    }
+  } catch (err) {
+    console.error('Error loading weekly:', err)
+  }
+}
+
+function renderWeekDays(moods) {
+  const container = document.getElementById('weekDays')
+  container.innerHTML = ''
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStartDate)
+    d.setDate(weekStartDate.getDate() + i)
+    const key = dateKey(d)
+    const isToday = key === todayKey
+    const mood = moods.find(m => m.date === key)
+    
+    container.innerHTML += `
+      <div class="week-day-card ${isToday ? 'today' : ''}" onclick="navigate('daily')">
+        <div class="week-day-name">${daysNames[d.getDay()]}</div>
+        <div class="week-day-num">${d.getDate()}</div>
+        ${mood ? `<div class="week-day-mood">${moodEmojis[mood.value - 1]}</div>` : '<div class="week-day-mood" style="opacity:0.3">—</div>'}
+      </div>
+    `
+  }
+}
+
+window.changeWeek = function(delta) {
+  weekStartDate.setDate(weekStartDate.getDate() + (delta * 7))
+  loadWeekly()
+}
+
+window.goToCurrentWeek = function() {
+  weekStartDate = getWeekStart(today)
+  loadWeekly()
+}
+
+window.saveWeekReflection = async function() {
+  const startKey = dateKey(weekStartDate)
+  
+  try {
+    await api.saveWeekReflection(startKey, {
+      intention: document.getElementById('weekIntention').value,
+      review: document.getElementById('weekReview').value
+    })
+    toast('Reflexão semanal salva ✓')
+  } catch (err) {
+    console.error('Error saving week reflection:', err)
+    toast('Erro ao salvar')
+  }
+}
+
+// ─── MONTHLY ─────────────────────────────────────────────────────
+async function loadMonthly() {
+  const year = reflectionMonth.getFullYear()
+  const month = reflectionMonth.getMonth()
+  
+  document.getElementById('monthLabel').textContent = `${monthNames[month]} de ${year}`
+  
+  try {
+    // Calculate month stats
+    const startDate = new Date(year, month, 1)
+    const endDate = new Date(year, month + 1, 0)
+    const startKey = dateKey(startDate)
+    const endKey = dateKey(endDate)
+    
+    const [monthGoals, monthMoods] = await Promise.all([
+      api.getGoals(),
+      api.getMoods(startKey, endKey)
+    ])
+    
+    renderMonthStats(monthGoals, monthMoods, endDate.getDate())
+    
+    // Load month reflection
+    const monthReflection = await api.getMonthReflection(year, month + 1)
+    if (monthReflection) {
+      document.getElementById('monthWin').value = monthReflection.win || ''
+      document.getElementById('monthLearning').value = monthReflection.learning || ''
+    } else {
+      document.getElementById('monthWin').value = ''
+      document.getElementById('monthLearning').value = ''
+    }
+  } catch (err) {
+    console.error('Error loading monthly:', err)
+  }
+}
+
+function renderMonthStats(goals, moods, daysInMonth) {
+  const completedGoals = goals.filter(g => calcProgress(g.goal_steps) === 100).length
+  const avgMood = moods.length > 0 
+    ? (moods.reduce((sum, m) => sum + m.value, 0) / moods.length).toFixed(1)
+    : '—'
+  const moodDays = moods.length
+  
+  document.getElementById('monthStats').innerHTML = `
+    <div class="month-stat">
+      <div class="month-stat-value">${goals.length}</div>
+      <div class="month-stat-label">Metas ativas</div>
+    </div>
+    <div class="month-stat">
+      <div class="month-stat-value">${completedGoals}</div>
+      <div class="month-stat-label">Metas concluídas</div>
+    </div>
+    <div class="month-stat">
+      <div class="month-stat-value">${avgMood}</div>
+      <div class="month-stat-label">Humor médio</div>
+    </div>
+    <div class="month-stat">
+      <div class="month-stat-value">${moodDays}/${daysInMonth}</div>
+      <div class="month-stat-label">Dias registrados</div>
+    </div>
+  `
+}
+
+window.changeReflectionMonth = function(delta) {
+  reflectionMonth.setMonth(reflectionMonth.getMonth() + delta)
+  loadMonthly()
+}
+
+window.goToCurrentMonth = function() {
+  reflectionMonth = new Date(today)
+  loadMonthly()
+}
+
+window.saveMonthReflection = async function() {
+  const year = reflectionMonth.getFullYear()
+  const month = reflectionMonth.getMonth() + 1
+  
+  try {
+    await api.saveMonthReflection(year, month, {
+      win: document.getElementById('monthWin').value,
+      learning: document.getElementById('monthLearning').value
+    })
+    toast('Reflexão mensal salva ✓')
+  } catch (err) {
+    console.error('Error saving month reflection:', err)
+    toast('Erro ao salvar')
+  }
+}
+
 // ─── GOALS ───────────────────────────────────────────────────────
 async function loadGoals() {
   try {
@@ -483,7 +850,6 @@ window.saveGoal = async function() {
   try {
     if (editingGoalId) {
       await api.updateGoal(editingGoalId, goalData)
-      // Update steps separately if needed
     } else {
       await api.createGoal(goalData)
     }
@@ -615,7 +981,6 @@ window.stopBreath = function() {
 
 // ─── INIT ────────────────────────────────────────────────────────
 async function init() {
-  // Check for existing session
   const session = await getSession()
   
   if (session?.user) {
@@ -624,7 +989,6 @@ async function init() {
     showAuth()
   }
   
-  // Listen for auth changes
   onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       showApp(session.user)
