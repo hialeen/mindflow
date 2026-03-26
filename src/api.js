@@ -120,6 +120,25 @@ export async function getTasks(date) {
     .select('*')
     .eq('user_id', user.id)
     .eq('date', date)
+    .order('time', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+  
+  if (error) throw error
+  return data
+}
+
+// Get tasks for a date range (e.g., week or month)
+export async function getTasksRange(startDate, endDate) {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: true })
+    .order('time', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true })
   
   if (error) throw error
@@ -136,6 +155,8 @@ export async function createTask(task) {
       text: task.text,
       category: task.category,
       date: task.date,
+      time: task.time || null,
+      notes: task.notes || null,
       done: false
     })
     .select()
