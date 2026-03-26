@@ -74,6 +74,17 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 2500)
 }
 
+// ─── MOBILE MENU ─────────────────────────────────────────────────
+window.toggleMobileMenu = function() {
+  document.getElementById('sidebar').classList.toggle('open')
+  document.getElementById('mobile-overlay').classList.toggle('open')
+}
+
+window.closeMobileMenu = function() {
+  document.getElementById('sidebar').classList.remove('open')
+  document.getElementById('mobile-overlay').classList.remove('open')
+}
+
 // ─── AUTH ────────────────────────────────────────────────────────
 window.showAuthTab = function(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'))
@@ -168,6 +179,8 @@ function showApp(user) {
 
 // ─── NAVIGATION ──────────────────────────────────────────────────
 window.navigate = function(view) {
+  closeMobileMenu()
+  
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
   document.getElementById('view-' + view).classList.add('active')
@@ -394,7 +407,6 @@ function renderCalendar() {
   const grid = document.getElementById('calendarGrid')
   grid.innerHTML = ''
   
-  // Previous month days
   const prevMonth = new Date(year, month, 0)
   for (let i = startDay - 1; i >= 0; i--) {
     const day = prevMonth.getDate() - i
@@ -402,13 +414,11 @@ function renderCalendar() {
     grid.innerHTML += createDayCell(d, true)
   }
   
-  // Current month days
   for (let day = 1; day <= totalDays; day++) {
     const d = new Date(year, month, day)
     grid.innerHTML += createDayCell(d, false)
   }
   
-  // Next month days
   const remaining = 42 - grid.children.length
   for (let day = 1; day <= remaining; day++) {
     const d = new Date(year, month + 1, day)
@@ -450,10 +460,8 @@ async function loadCalendarData() {
 }
 
 function renderCalendarDots() {
-  // Clear all dots
   document.querySelectorAll('.calendar-day-dots').forEach(el => el.innerHTML = '')
   
-  // Add event dots
   events.forEach(e => {
     const dotsEl = document.getElementById('dots-' + e.date)
     if (dotsEl) {
@@ -559,14 +567,12 @@ async function loadWeekly() {
   document.getElementById('weekLabel').textContent = `${weekStartDate.getDate()} de ${monthNames[weekStartDate.getMonth()]} — ${weekEnd.getDate()} de ${monthNames[weekEnd.getMonth()]}`
   
   try {
-    // Load tasks and moods for the week
     const startKey = dateKey(weekStartDate)
     const endKey = dateKey(weekEnd)
     const weekMoods = await api.getMoods(startKey, endKey)
     
     renderWeekDays(weekMoods)
     
-    // Load week reflection
     const weekReflection = await api.getWeekReflection(startKey)
     if (weekReflection) {
       document.getElementById('weekIntention').value = weekReflection.intention || ''
@@ -634,7 +640,6 @@ async function loadMonthly() {
   document.getElementById('monthLabel').textContent = `${monthNames[month]} de ${year}`
   
   try {
-    // Calculate month stats
     const startDate = new Date(year, month, 1)
     const endDate = new Date(year, month + 1, 0)
     const startKey = dateKey(startDate)
@@ -647,7 +652,6 @@ async function loadMonthly() {
     
     renderMonthStats(monthGoals, monthMoods, endDate.getDate())
     
-    // Load month reflection
     const monthReflection = await api.getMonthReflection(year, month + 1)
     if (monthReflection) {
       document.getElementById('monthWin').value = monthReflection.win || ''
