@@ -73,11 +73,28 @@
 
   <!-- Main App -->
   <div id="app" style="display:none">
+    <!-- Mobile Header -->
+    <header id="mobile-header">
+      <button class="menu-toggle" onclick="toggleMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+      <div class="mobile-logo">
+        <h1>MindFlow</h1>
+      </div>
+      <div style="width:40px"></div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
     <!-- Sidebar -->
     <nav id="sidebar">
       <div class="sidebar-logo">
         <h1>MindFlow</h1>
         <p>Organização consciente</p>
+        <button class="mobile-close" onclick="closeMobileMenu()">✕</button>
       </div>
 
       <div class="nav-section">
@@ -205,7 +222,7 @@
               <option value="saude">Saúde</option>
               <option value="terapia">Terapia</option>
             </select>
-            <button class="btn btn-accent" onclick="addTask()">+ Adicionar</button>
+            <button class="btn btn-accent" onclick="addTask()">+</button>
           </div>
           <div class="task-list" id="taskList"></div>
         </div>
@@ -280,7 +297,7 @@
         <div class="card" style="margin-bottom:20px">
           <div class="task-input-row">
             <input class="input" id="gratitudeInput" placeholder="Pelo que você é grato hoje?" onkeydown="if(event.key==='Enter') addGratitude()">
-            <button class="btn btn-accent" onclick="addGratitude()">+ Registrar</button>
+            <button class="btn btn-accent" onclick="addGratitude()">+</button>
           </div>
         </div>
 
@@ -335,9 +352,9 @@
             <div class="view-subtitle" id="calendarMonthLabel"></div>
           </div>
           <div class="calendar-nav">
-            <button class="btn" onclick="changeMonth(-1)">← Anterior</button>
+            <button class="btn" onclick="changeMonth(-1)">←</button>
             <button class="btn" onclick="goToToday()">Hoje</button>
-            <button class="btn" onclick="changeMonth(1)">Próximo →</button>
+            <button class="btn" onclick="changeMonth(1)">→</button>
           </div>
         </div>
 
@@ -375,9 +392,9 @@
             <div class="view-subtitle" id="weekLabel"></div>
           </div>
           <div class="calendar-nav">
-            <button class="btn" onclick="changeWeek(-1)">← Anterior</button>
-            <button class="btn" onclick="goToCurrentWeek()">Esta semana</button>
-            <button class="btn" onclick="changeWeek(1)">Próxima →</button>
+            <button class="btn" onclick="changeWeek(-1)">←</button>
+            <button class="btn" onclick="goToCurrentWeek()">Esta</button>
+            <button class="btn" onclick="changeWeek(1)">→</button>
           </div>
         </div>
 
@@ -406,9 +423,9 @@
             <div class="view-subtitle" id="monthLabel"></div>
           </div>
           <div class="calendar-nav">
-            <button class="btn" onclick="changeReflectionMonth(-1)">← Anterior</button>
-            <button class="btn" onclick="goToCurrentMonth()">Este mês</button>
-            <button class="btn" onclick="changeReflectionMonth(1)">Próximo →</button>
+            <button class="btn" onclick="changeReflectionMonth(-1)">←</button>
+            <button class="btn" onclick="goToCurrentMonth()">Este</button>
+            <button class="btn" onclick="changeReflectionMonth(1)">→</button>
           </div>
         </div>
 
@@ -460,7 +477,7 @@
         <label class="form-label">Passos <span id="gProgressLabel" style="color:var(--accent3);margin-left:6px">0%</span></label>
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input class="input" id="gStepInput" placeholder="Adicionar passo..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addGoalStep()}">
-          <button class="btn" onclick="addGoalStep()">+ Passo</button>
+          <button class="btn" onclick="addGoalStep()">+</button>
         </div>
         <div id="gStepsList" class="steps-list"></div>
       </div>
