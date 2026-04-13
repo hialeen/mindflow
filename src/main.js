@@ -76,49 +76,58 @@ const moodEmojis = ['😢', '😔', '😐', '🙂', '😊']
 // ─── TOAST ───────────────────────────────────────────────────────
 function toast(msg) {
   const el = document.getElementById('toast')
-  el.textContent = msg
-  el.classList.add('show')
-  setTimeout(() => el.classList.remove('show'), 2500)
+  if (el) {
+    el.textContent = msg
+    el.classList.add('show')
+    setTimeout(() => el.classList.remove('show'), 2500)
+  }
 }
 
 // ─── MOBILE MENU ─────────────────────────────────────────────────
 window.toggleMobileMenu = function() {
-  document.getElementById('sidebar').classList.toggle('open')
-  document.getElementById('mobile-overlay').classList.toggle('open')
+  document.getElementById('sidebar')?.classList.toggle('open')
+  document.getElementById('mobile-overlay')?.classList.toggle('open')
 }
 
 window.closeMobileMenu = function() {
-  document.getElementById('sidebar').classList.remove('open')
-  document.getElementById('mobile-overlay').classList.remove('open')
+  document.getElementById('sidebar')?.classList.remove('open')
+  document.getElementById('mobile-overlay')?.classList.remove('open')
 }
 
 // ─── AUTH ────────────────────────────────────────────────────────
 window.showAuthTab = function(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'))
-  document.querySelector(`.auth-tab[onclick*="${tab}"]`).classList.add('active')
+  document.querySelector(`.auth-tab[onclick*="${tab}"]`)?.classList.add('active')
   
-  document.getElementById('login-form').style.display = tab === 'login' ? 'flex' : 'none'
-  document.getElementById('signup-form').style.display = tab === 'signup' ? 'flex' : 'none'
+  const loginForm = document.getElementById('login-form')
+  const signupForm = document.getElementById('signup-form')
+  if (loginForm) loginForm.style.display = tab === 'login' ? 'flex' : 'none'
+  if (signupForm) signupForm.style.display = tab === 'signup' ? 'flex' : 'none'
   
-  document.getElementById('login-error').textContent = ''
-  document.getElementById('signup-error').textContent = ''
-  document.getElementById('signup-success').textContent = ''
+  const loginError = document.getElementById('login-error')
+  const signupError = document.getElementById('signup-error')
+  const signupSuccess = document.getElementById('signup-success')
+  if (loginError) loginError.textContent = ''
+  if (signupError) signupError.textContent = ''
+  if (signupSuccess) signupSuccess.textContent = ''
 }
 
 window.handleLogin = async function(e) {
   e.preventDefault()
-  const email = document.getElementById('login-email').value
-  const password = document.getElementById('login-password').value
+  const email = document.getElementById('login-email')?.value
+  const password = document.getElementById('login-password')?.value
   const errorEl = document.getElementById('login-error')
   
-  errorEl.textContent = ''
+  if (errorEl) errorEl.textContent = ''
   
   const { data, error } = await signIn(email, password)
   
   if (error) {
-    errorEl.textContent = error.message === 'Invalid login credentials' 
-      ? 'Email ou senha incorretos' 
-      : error.message
+    if (errorEl) {
+      errorEl.textContent = error.message === 'Invalid login credentials' 
+        ? 'Email ou senha incorretos' 
+        : error.message
+    }
     return
   }
   
@@ -127,34 +136,35 @@ window.handleLogin = async function(e) {
 
 window.handleSignup = async function(e) {
   e.preventDefault()
-  const email = document.getElementById('signup-email').value
-  const password = document.getElementById('signup-password').value
-  const confirmPassword = document.getElementById('signup-password-confirm').value
+  const email = document.getElementById('signup-email')?.value
+  const password = document.getElementById('signup-password')?.value
+  const confirmPassword = document.getElementById('signup-password-confirm')?.value
   const errorEl = document.getElementById('signup-error')
   const successEl = document.getElementById('signup-success')
   
-  errorEl.textContent = ''
-  successEl.textContent = ''
+  if (errorEl) errorEl.textContent = ''
+  if (successEl) successEl.textContent = ''
   
   if (password !== confirmPassword) {
-    errorEl.textContent = 'As senhas não coincidem'
+    if (errorEl) errorEl.textContent = 'As senhas não coincidem'
     return
   }
   
   const { data, error } = await signUp(email, password)
   
   if (error) {
-    errorEl.textContent = error.message
+    if (errorEl) errorEl.textContent = error.message
     return
   }
   
-  successEl.textContent = 'Conta criada! Verifique seu email para confirmar.'
+  if (successEl) successEl.textContent = 'Conta criada! Verifique seu email para confirmar.'
 }
 
 window.handleGoogleLogin = async function() {
   const { error } = await signInWithGoogle()
   if (error) {
-    document.getElementById('login-error').textContent = error.message
+    const errorEl = document.getElementById('login-error')
+    if (errorEl) errorEl.textContent = error.message
   }
 }
 
@@ -164,24 +174,31 @@ window.handleLogout = async function() {
 }
 
 function showAuth() {
-  document.getElementById('auth-screen').style.display = 'flex'
-  document.getElementById('app').style.display = 'none'
+  const authScreen = document.getElementById('auth-screen')
+  const app = document.getElementById('app')
+  if (authScreen) authScreen.style.display = 'flex'
+  if (app) app.style.display = 'none'
 }
 
 function showApp(user) {
   currentUser = user
-  document.getElementById('auth-screen').style.display = 'none'
-  document.getElementById('app').style.display = 'flex'
+  const authScreen = document.getElementById('auth-screen')
+  const app = document.getElementById('app')
+  if (authScreen) authScreen.style.display = 'none'
+  if (app) app.style.display = 'flex'
   
-  document.getElementById('user-info').textContent = user.email
+  const userInfo = document.getElementById('user-info')
+  if (userInfo) userInfo.textContent = user.email
   
   const hour = new Date().getHours()
   let greeting = 'Bom dia'
   if (hour >= 12 && hour < 18) greeting = 'Boa tarde'
   else if (hour >= 18) greeting = 'Boa noite'
-  document.getElementById('greeting').textContent = greeting + ' ✦'
   
-  loadDashboard()
+  const greetingEl = document.getElementById('greeting')
+  if (greetingEl) greetingEl.textContent = greeting + ' ✦'
+  
+  navigate('dashboard')
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────
@@ -190,27 +207,38 @@ window.navigate = function(view) {
   
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
-  document.getElementById('view-' + view).classList.add('active')
+  
+  const viewEl = document.getElementById('view-' + view)
+  if (viewEl) viewEl.classList.add('active')
+  
   document.querySelector(`.nav-item[onclick*="${view}"]`)?.classList.add('active')
   
   if (view === 'dashboard') loadDashboard()
-  if (view === 'daily') loadDaily()
-  if (view === 'goals') loadGoals()
-  if (view === 'gratitude') loadGratitude()
-  if (view === 'calendar') loadCalendar()
-  if (view === 'weekly') loadWeekly()
-  if (view === 'monthly') loadMonthly()
+  else if (view === 'daily') loadDaily()
+  else if (view === 'goals') loadGoals()
+  else if (view === 'gratitude') loadGratitude()
+  else if (view === 'calendar') loadCalendar()
+  else if (view === 'weekly') loadWeekly()
+  else if (view === 'monthly') loadMonthly()
 }
 
 // ─── TASK MODAL ──────────────────────────────────────────────────
 window.openTaskModal = function(presetDate = null) {
-  document.getElementById('taskModalTitle').textContent = 'Nova tarefa'
-  document.getElementById('tText').value = ''
-  document.getElementById('tDate').value = presetDate || todayKey
-  document.getElementById('tTime').value = ''
-  document.getElementById('tCat').value = 'pessoal'
-  document.getElementById('tNotes').value = ''
-  document.getElementById('taskModal').classList.add('open')
+  const modal = document.getElementById('taskModal')
+  const title = document.getElementById('taskModalTitle')
+  const tText = document.getElementById('tText')
+  const tDate = document.getElementById('tDate')
+  const tTime = document.getElementById('tTime')
+  const tCat = document.getElementById('tCat')
+  const tNotes = document.getElementById('tNotes')
+  
+  if (title) title.textContent = 'Nova tarefa'
+  if (tText) tText.value = ''
+  if (tDate) tDate.value = presetDate || todayKey
+  if (tTime) tTime.value = ''
+  if (tCat) tCat.value = 'pessoal'
+  if (tNotes) tNotes.value = ''
+  if (modal) modal.classList.add('open')
 }
 
 window.openTaskModalForDate = function() {
@@ -219,19 +247,19 @@ window.openTaskModalForDate = function() {
 }
 
 window.closeTaskModal = function() {
-  document.getElementById('taskModal').classList.remove('open')
+  document.getElementById('taskModal')?.classList.remove('open')
 }
 
 window.saveTask = async function() {
-  const text = document.getElementById('tText').value.trim()
+  const text = document.getElementById('tText')?.value.trim()
   if (!text) return
   
   const taskData = {
     text,
-    date: document.getElementById('tDate').value,
-    time: document.getElementById('tTime').value || null,
-    category: document.getElementById('tCat').value,
-    notes: document.getElementById('tNotes').value || null
+    date: document.getElementById('tDate')?.value || todayKey,
+    time: document.getElementById('tTime')?.value || null,
+    category: document.getElementById('tCat')?.value || 'pessoal',
+    notes: document.getElementById('tNotes')?.value || null
   }
   
   try {
@@ -253,17 +281,24 @@ window.saveTask = async function() {
 
 // ─── DASHBOARD ───────────────────────────────────────────────────
 async function loadDashboard() {
-  document.getElementById('todayLabel').textContent = fmtDate(today) + ' — ' + daysNames[today.getDay()]
-  document.getElementById('dailyQuote').textContent = quotes[today.getDate() % quotes.length]
+  const todayLabel = document.getElementById('todayLabel')
+  const dailyQuote = document.getElementById('dailyQuote')
+  
+  if (todayLabel) todayLabel.textContent = fmtDate(today) + ' — ' + daysNames[today.getDay()]
+  if (dailyQuote) dailyQuote.textContent = quotes[today.getDate() % quotes.length]
   
   try {
     tasks = await api.getTasks(todayKey)
     const done = tasks.filter(t => t.done).length
-    document.getElementById('statTasksDone').textContent = `${done}/${tasks.length}`
+    
+    const statTasksDone = document.getElementById('statTasksDone')
+    if (statTasksDone) statTasksDone.textContent = `${done}/${tasks.length}`
     
     goals = await api.getGoals()
     const activeGoals = goals.filter(g => calcProgress(g.goal_steps) < 100)
-    document.getElementById('statGoals').textContent = activeGoals.length
+    
+    const statGoals = document.getElementById('statGoals')
+    if (statGoals) statGoals.textContent = activeGoals.length
     
     renderDashGoals()
     
@@ -272,7 +307,8 @@ async function loadDashboard() {
     const moods = await api.getMoods(weekAgo.toISOString().split('T')[0], todayKey)
     renderMoodChart(moods)
     
-    document.getElementById('statStreak').textContent = tasks.length > 0 ? '1' : '0'
+    const statStreak = document.getElementById('statStreak')
+    if (statStreak) statStreak.textContent = tasks.length > 0 ? '1' : '0'
     
   } catch (err) {
     console.error('Error loading dashboard:', err)
@@ -281,6 +317,7 @@ async function loadDashboard() {
 
 function renderDashGoals() {
   const list = document.getElementById('dashGoalsList')
+  if (!list) return
   
   if (goals.length === 0) {
     list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0">Nenhuma meta ainda</div>'
@@ -299,6 +336,8 @@ function renderDashGoals() {
 
 function renderMoodChart(moods) {
   const chart = document.getElementById('moodChart')
+  if (!chart) return
+  
   chart.innerHTML = ''
   
   for (let i = 6; i >= 0; i--) {
@@ -321,33 +360,38 @@ function calcProgress(steps) {
 
 // ─── DAILY ───────────────────────────────────────────────────────
 async function loadDaily() {
-  document.getElementById('dailyDateLabel').textContent = fmtDate(today)
+  const dailyDateLabel = document.getElementById('dailyDateLabel')
+  if (dailyDateLabel) dailyDateLabel.textContent = fmtDate(today)
   
   try {
     tasks = await api.getTasks(todayKey)
     renderTasks()
     
     const reflection = await api.getReflection(todayKey)
+    const r_morning = document.getElementById('r_morning')
+    const r_thoughts = document.getElementById('r_thoughts')
+    const r_emotions = document.getElementById('r_emotions')
+    const r_selfcare = document.getElementById('r_selfcare')
+    const r_evening = document.getElementById('r_evening')
+    
     if (reflection) {
-      document.getElementById('r_morning').value = reflection.morning || ''
-      document.getElementById('r_thoughts').value = reflection.thoughts || ''
-      document.getElementById('r_emotions').value = reflection.emotions || ''
-      document.getElementById('r_selfcare').value = reflection.selfcare || ''
-      document.getElementById('r_evening').value = reflection.evening || ''
+      if (r_morning) r_morning.value = reflection.morning || ''
+      if (r_thoughts) r_thoughts.value = reflection.thoughts || ''
+      if (r_emotions) r_emotions.value = reflection.emotions || ''
+      if (r_selfcare) r_selfcare.value = reflection.selfcare || ''
+      if (r_evening) r_evening.value = reflection.evening || ''
     } else {
-      document.getElementById('r_morning').value = ''
-      document.getElementById('r_thoughts').value = ''
-      document.getElementById('r_emotions').value = ''
-      document.getElementById('r_selfcare').value = ''
-      document.getElementById('r_evening').value = ''
+      if (r_morning) r_morning.value = ''
+      if (r_thoughts) r_thoughts.value = ''
+      if (r_emotions) r_emotions.value = ''
+      if (r_selfcare) r_selfcare.value = ''
+      if (r_evening) r_evening.value = ''
     }
     
     const note = await api.getNote(todayKey)
-    if (note) {
-      document.getElementById('freeNotes').value = note.content || ''
-    } else {
-      document.getElementById('freeNotes').value = ''
-    }
+    const freeNotes = document.getElementById('freeNotes')
+    if (freeNotes) freeNotes.value = note?.content || ''
+    
   } catch (err) {
     console.error('Error loading daily:', err)
   }
@@ -355,6 +399,7 @@ async function loadDaily() {
 
 function renderTasks() {
   const list = document.getElementById('taskList')
+  if (!list) return
   
   if (tasks.length === 0) {
     list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px;text-align:center">Nenhuma tarefa para hoje. <a href="#" onclick="openTaskModal();return false" style="color:var(--accent)">Criar uma?</a></div>'
@@ -419,17 +464,17 @@ window.switchTab = function(name) {
   document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'))
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'))
   event.target.classList.add('active')
-  document.getElementById('tab-' + name).classList.add('active')
+  document.getElementById('tab-' + name)?.classList.add('active')
 }
 
 window.saveReflections = async function() {
   try {
     await api.saveReflection(todayKey, {
-      morning: document.getElementById('r_morning').value,
-      thoughts: document.getElementById('r_thoughts').value,
-      emotions: document.getElementById('r_emotions').value,
-      selfcare: document.getElementById('r_selfcare').value,
-      evening: document.getElementById('r_evening').value
+      morning: document.getElementById('r_morning')?.value || '',
+      thoughts: document.getElementById('r_thoughts')?.value || '',
+      emotions: document.getElementById('r_emotions')?.value || '',
+      selfcare: document.getElementById('r_selfcare')?.value || '',
+      evening: document.getElementById('r_evening')?.value || ''
     })
     toast('Reflexões salvas ✓')
   } catch (err) {
@@ -440,8 +485,9 @@ window.saveReflections = async function() {
 
 window.saveFreeNotes = async function() {
   try {
-    await api.saveNote(todayKey, document.getElementById('freeNotes').value)
-    document.getElementById('notesStatus').textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+    await api.saveNote(todayKey, document.getElementById('freeNotes')?.value || '')
+    const notesStatus = document.getElementById('notesStatus')
+    if (notesStatus) notesStatus.textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
     toast('Anotações salvas ✓')
   } catch (err) {
     console.error('Error saving notes:', err)
@@ -457,17 +503,20 @@ async function loadCalendar() {
 }
 
 function renderCalendar() {
+  const grid = document.getElementById('calendarGrid')
+  const monthLabel = document.getElementById('calendarMonthLabel')
+  if (!grid) return
+  
   const year = calendarDate.getFullYear()
   const month = calendarDate.getMonth()
   
-  document.getElementById('calendarMonthLabel').textContent = `${monthNames[month]} de ${year}`
+  if (monthLabel) monthLabel.textContent = `${monthNames[month]} de ${year}`
   
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   const startDay = firstDay.getDay()
   const totalDays = lastDay.getDate()
   
-  const grid = document.getElementById('calendarGrid')
   grid.innerHTML = ''
   
   const prevMonth = new Date(year, month, 0)
@@ -518,7 +567,7 @@ async function loadCalendarData() {
     renderCalendarDots()
     renderDayTasks()
   } catch (err) {
-    console.error('Error loading calendar:', err)
+    console.error('Error loading calendar data:', err)
   }
 }
 
@@ -542,11 +591,11 @@ function renderCalendarDots() {
 }
 
 function renderDayTasks() {
-  if (!selectedDate) return
+  const container = document.getElementById('dayTasks')
+  if (!container || !selectedDate) return
   
   const key = dateKey(selectedDate)
   const dayTasks = calendarTasks.filter(t => t.date === key)
-  const container = document.getElementById('dayTasks')
   
   if (dayTasks.length === 0) {
     container.innerHTML = '<div class="no-events">Nenhuma tarefa neste dia</div>'
@@ -569,8 +618,8 @@ function renderDayTasks() {
 }
 
 function updateSelectedDayLabel() {
-  if (!selectedDate) return
   const label = document.getElementById('selectedDayLabel')
+  if (!label || !selectedDate) return
   label.textContent = `${daysFullNames[selectedDate.getDay()]}, ${selectedDate.getDate()} de ${monthNames[selectedDate.getMonth()]}`
 }
 
@@ -596,26 +645,32 @@ window.goToToday = function() {
 }
 
 window.openEventModal = function() {
-  document.getElementById('eventTitle').value = ''
-  document.getElementById('eventDate').value = selectedDate ? dateKey(selectedDate) : todayKey
-  document.getElementById('eventType').value = 'personal'
-  document.getElementById('eventNotes').value = ''
-  document.getElementById('eventModal').classList.add('open')
+  const eventTitle = document.getElementById('eventTitle')
+  const eventDate = document.getElementById('eventDate')
+  const eventType = document.getElementById('eventType')
+  const eventNotes = document.getElementById('eventNotes')
+  const modal = document.getElementById('eventModal')
+  
+  if (eventTitle) eventTitle.value = ''
+  if (eventDate) eventDate.value = selectedDate ? dateKey(selectedDate) : todayKey
+  if (eventType) eventType.value = 'personal'
+  if (eventNotes) eventNotes.value = ''
+  if (modal) modal.classList.add('open')
 }
 
 window.closeEventModal = function() {
-  document.getElementById('eventModal').classList.remove('open')
+  document.getElementById('eventModal')?.classList.remove('open')
 }
 
 window.saveEvent = async function() {
-  const title = document.getElementById('eventTitle').value.trim()
+  const title = document.getElementById('eventTitle')?.value.trim()
   if (!title) return
   
   const eventData = {
     title,
-    date: document.getElementById('eventDate').value,
-    type: document.getElementById('eventType').value,
-    notes: document.getElementById('eventNotes').value
+    date: document.getElementById('eventDate')?.value || todayKey,
+    type: document.getElementById('eventType')?.value || 'personal',
+    notes: document.getElementById('eventNotes')?.value || ''
   }
   
   try {
@@ -637,7 +692,8 @@ async function loadWeekly() {
   }
   
   const weekEnd = getWeekEnd(weekStartDate)
-  document.getElementById('weekLabel').textContent = `${weekStartDate.getDate()} de ${monthNames[weekStartDate.getMonth()]} — ${weekEnd.getDate()} de ${monthNames[weekEnd.getMonth()]}`
+  const weekLabel = document.getElementById('weekLabel')
+  if (weekLabel) weekLabel.textContent = `${weekStartDate.getDate()} de ${monthNames[weekStartDate.getMonth()]} — ${weekEnd.getDate()} de ${monthNames[weekEnd.getMonth()]}`
   
   try {
     const startKey = dateKey(weekStartDate)
@@ -654,12 +710,15 @@ async function loadWeekly() {
     renderWeekTasks()
     
     const weekReflection = await api.getWeekReflection(startKey)
+    const weekIntention = document.getElementById('weekIntention')
+    const weekReview = document.getElementById('weekReview')
+    
     if (weekReflection) {
-      document.getElementById('weekIntention').value = weekReflection.intention || ''
-      document.getElementById('weekReview').value = weekReflection.review || ''
+      if (weekIntention) weekIntention.value = weekReflection.intention || ''
+      if (weekReview) weekReview.value = weekReflection.review || ''
     } else {
-      document.getElementById('weekIntention').value = ''
-      document.getElementById('weekReview').value = ''
+      if (weekIntention) weekIntention.value = ''
+      if (weekReview) weekReview.value = ''
     }
   } catch (err) {
     console.error('Error loading weekly:', err)
@@ -668,6 +727,8 @@ async function loadWeekly() {
 
 function renderWeekDays(moods) {
   const container = document.getElementById('weekDays')
+  if (!container) return
+  
   container.innerHTML = ''
   
   for (let i = 0; i < 7; i++) {
@@ -695,6 +756,7 @@ function renderWeekDays(moods) {
 
 function renderWeekTasks() {
   const container = document.getElementById('weekTasksList')
+  if (!container) return
   
   if (weekTasks.length === 0) {
     container.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px;text-align:center">Nenhuma tarefa esta semana. <a href="#" onclick="openTaskModal();return false" style="color:var(--accent)">Criar uma?</a></div>'
@@ -751,8 +813,8 @@ window.saveWeekReflection = async function() {
   
   try {
     await api.saveWeekReflection(startKey, {
-      intention: document.getElementById('weekIntention').value,
-      review: document.getElementById('weekReview').value
+      intention: document.getElementById('weekIntention')?.value || '',
+      review: document.getElementById('weekReview')?.value || ''
     })
     toast('Reflexão semanal salva ✓')
   } catch (err) {
@@ -766,7 +828,8 @@ async function loadMonthly() {
   const year = reflectionMonth.getFullYear()
   const month = reflectionMonth.getMonth()
   
-  document.getElementById('monthLabel').textContent = `${monthNames[month]} de ${year}`
+  const monthLabel = document.getElementById('monthLabel')
+  if (monthLabel) monthLabel.textContent = `${monthNames[month]} de ${year}`
   
   try {
     const startDate = new Date(year, month, 1)
@@ -782,12 +845,15 @@ async function loadMonthly() {
     renderMonthStats(monthGoals, monthMoods, endDate.getDate())
     
     const monthReflection = await api.getMonthReflection(year, month + 1)
+    const monthWin = document.getElementById('monthWin')
+    const monthLearning = document.getElementById('monthLearning')
+    
     if (monthReflection) {
-      document.getElementById('monthWin').value = monthReflection.win || ''
-      document.getElementById('monthLearning').value = monthReflection.learning || ''
+      if (monthWin) monthWin.value = monthReflection.win || ''
+      if (monthLearning) monthLearning.value = monthReflection.learning || ''
     } else {
-      document.getElementById('monthWin').value = ''
-      document.getElementById('monthLearning').value = ''
+      if (monthWin) monthWin.value = ''
+      if (monthLearning) monthLearning.value = ''
     }
   } catch (err) {
     console.error('Error loading monthly:', err)
@@ -795,13 +861,16 @@ async function loadMonthly() {
 }
 
 function renderMonthStats(goals, moods, daysInMonth) {
+  const monthStats = document.getElementById('monthStats')
+  if (!monthStats) return
+  
   const completedGoals = goals.filter(g => calcProgress(g.goal_steps) === 100).length
   const avgMood = moods.length > 0 
     ? (moods.reduce((sum, m) => sum + m.value, 0) / moods.length).toFixed(1)
     : '—'
   const moodDays = moods.length
   
-  document.getElementById('monthStats').innerHTML = `
+  monthStats.innerHTML = `
     <div class="month-stat">
       <div class="month-stat-value">${goals.length}</div>
       <div class="month-stat-label">Metas ativas</div>
@@ -837,8 +906,8 @@ window.saveMonthReflection = async function() {
   
   try {
     await api.saveMonthReflection(year, month, {
-      win: document.getElementById('monthWin').value,
-      learning: document.getElementById('monthLearning').value
+      win: document.getElementById('monthWin')?.value || '',
+      learning: document.getElementById('monthLearning')?.value || ''
     })
     toast('Reflexão mensal salva ✓')
   } catch (err) {
@@ -859,6 +928,8 @@ async function loadGoals() {
 
 function renderGoals() {
   const list = document.getElementById('goalsList')
+  if (!list) return
+  
   const filtered = goalFilter === 'all' ? goals : goals.filter(g => g.category === goalFilter)
   
   if (filtered.length === 0) {
@@ -899,38 +970,49 @@ window.openGoalModal = function(id = null) {
   editingGoalId = id
   gModalSteps = []
   
+  const goalModalTitle = document.getElementById('goalModalTitle')
+  const gTitle = document.getElementById('gTitle')
+  const gCat = document.getElementById('gCat')
+  const gDeadline = document.getElementById('gDeadline')
+  const gWhy = document.getElementById('gWhy')
+  const gStepInput = document.getElementById('gStepInput')
+  const goalModal = document.getElementById('goalModal')
+  
   if (id) {
     const goal = goals.find(g => g.id === id)
     if (goal) {
-      document.getElementById('goalModalTitle').textContent = 'Editar meta'
-      document.getElementById('gTitle').value = goal.title
-      document.getElementById('gCat').value = goal.category
-      document.getElementById('gDeadline').value = goal.deadline || ''
-      document.getElementById('gWhy').value = goal.why || ''
+      if (goalModalTitle) goalModalTitle.textContent = 'Editar meta'
+      if (gTitle) gTitle.value = goal.title
+      if (gCat) gCat.value = goal.category
+      if (gDeadline) gDeadline.value = goal.deadline || ''
+      if (gWhy) gWhy.value = goal.why || ''
       gModalSteps = (goal.goal_steps || []).map(s => ({...s}))
     }
   } else {
-    document.getElementById('goalModalTitle').textContent = 'Nova meta'
-    document.getElementById('gTitle').value = ''
-    document.getElementById('gCat').value = 'pessoal'
-    document.getElementById('gDeadline').value = ''
-    document.getElementById('gWhy').value = ''
+    if (goalModalTitle) goalModalTitle.textContent = 'Nova meta'
+    if (gTitle) gTitle.value = ''
+    if (gCat) gCat.value = 'pessoal'
+    if (gDeadline) gDeadline.value = ''
+    if (gWhy) gWhy.value = ''
   }
   
-  document.getElementById('gStepInput').value = ''
+  if (gStepInput) gStepInput.value = ''
   renderModalSteps()
-  document.getElementById('goalModal').classList.add('open')
+  if (goalModal) goalModal.classList.add('open')
 }
 
 window.closeGoalModal = function() {
-  document.getElementById('goalModal').classList.remove('open')
+  document.getElementById('goalModal')?.classList.remove('open')
   editingGoalId = null
 }
 
 function renderModalSteps() {
   const list = document.getElementById('gStepsList')
+  const label = document.getElementById('gProgressLabel')
+  if (!list) return
+  
   const pct = calcProgress(gModalSteps)
-  document.getElementById('gProgressLabel').textContent = pct + '%'
+  if (label) label.textContent = pct + '%'
   
   if (gModalSteps.length === 0) {
     list.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhum passo adicionado</div>'
@@ -950,11 +1032,11 @@ function renderModalSteps() {
 
 window.addGoalStep = function() {
   const input = document.getElementById('gStepInput')
-  const text = input.value.trim()
+  const text = input?.value.trim()
   if (!text) return
   
   gModalSteps.push({ text, done: false })
-  input.value = ''
+  if (input) input.value = ''
   renderModalSteps()
 }
 
@@ -969,14 +1051,14 @@ window.removeModalStep = function(i) {
 }
 
 window.saveGoal = async function() {
-  const title = document.getElementById('gTitle').value.trim()
+  const title = document.getElementById('gTitle')?.value.trim()
   if (!title) return
   
   const goalData = {
     title,
-    category: document.getElementById('gCat').value,
-    deadline: document.getElementById('gDeadline').value || null,
-    why: document.getElementById('gWhy').value,
+    category: document.getElementById('gCat')?.value || 'pessoal',
+    deadline: document.getElementById('gDeadline')?.value || null,
+    why: document.getElementById('gWhy')?.value || '',
     steps: gModalSteps
   }
   
@@ -1012,6 +1094,7 @@ async function loadGratitude() {
 
 function renderGratitude() {
   const list = document.getElementById('gratitudeList')
+  if (!list) return
   
   if (gratitudes.length === 0) {
     list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:20px;text-align:center;font-family:var(--serif);font-style:italic">Ainda não há registros de gratidão</div>'
@@ -1031,13 +1114,13 @@ function renderGratitude() {
 
 window.addGratitude = async function() {
   const input = document.getElementById('gratitudeInput')
-  const text = input.value.trim()
+  const text = input?.value.trim()
   if (!text) return
   
   try {
     const item = await api.createGratitude(text, todayKey)
     gratitudes.unshift(item)
-    input.value = ''
+    if (input) input.value = ''
     renderGratitude()
     toast('Gratidão registrada ✦')
   } catch (err) {
@@ -1061,7 +1144,7 @@ const breathPatterns = {
 window.selectBreath = function(type) {
   breathType = type
   document.querySelectorAll('.breath-option').forEach(el => el.classList.remove('active'))
-  document.getElementById('bt-' + type).classList.add('active')
+  document.getElementById('bt-' + type)?.classList.add('active')
 }
 
 window.startBreath = function() {
@@ -1080,15 +1163,18 @@ function runBreathCycle(stepIdx) {
   const circle = document.getElementById('breathCircle')
   const instr = document.getElementById('breathInstruction')
   
-  circle.className = 'breath-circle ' + step.phase
-  circle.innerHTML = step.label
-  instr.textContent = step.label
+  if (circle) {
+    circle.className = 'breath-circle ' + step.phase
+    circle.innerHTML = step.label
+  }
+  if (instr) instr.textContent = step.label
   
   breathTimer = setTimeout(() => {
     const nextStep = (stepIdx + 1) % pattern.length
     if (nextStep === 0) {
       breathCycles++
-      document.getElementById('cycleCount').textContent = breathCycles
+      const cycleCount = document.getElementById('cycleCount')
+      if (cycleCount) cycleCount.textContent = breathCycles
       if (breathCycles >= 5) {
         stopBreath()
         return
@@ -1103,9 +1189,13 @@ window.stopBreath = function() {
   clearTimeout(breathTimer)
   
   const circle = document.getElementById('breathCircle')
-  circle.className = 'breath-circle'
-  circle.innerHTML = 'Toque para<br>iniciar'
-  document.getElementById('breathInstruction').textContent = 'Respire naturalmente'
+  const instr = document.getElementById('breathInstruction')
+  
+  if (circle) {
+    circle.className = 'breath-circle'
+    circle.innerHTML = 'Toque para<br>iniciar'
+  }
+  if (instr) instr.textContent = 'Respire naturalmente'
   
   if (breathCycles > 0) {
     toast(`${breathCycles} ciclos completos ✓`)
