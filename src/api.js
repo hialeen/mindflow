@@ -3,16 +3,20 @@ import { supabase } from './supabase.js'
 // ─── GOALS ──────────────────────────────────────────────────────
 
 export async function getGoals() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  
   const { data, error } = await supabase
     .from('goals')
     .select(`
       *,
       goal_steps (*)
     `)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function createGoal(goal) {
@@ -114,6 +118,7 @@ export async function deleteGoalStep(id) {
 
 export async function getTasks(date) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('tasks')
@@ -124,12 +129,13 @@ export async function getTasks(date) {
     .order('created_at', { ascending: true })
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 // Get tasks for a date range (e.g., week or month)
 export async function getTasksRange(startDate, endDate) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('tasks')
@@ -142,7 +148,7 @@ export async function getTasksRange(startDate, endDate) {
     .order('created_at', { ascending: true })
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function createTask(task) {
@@ -191,6 +197,7 @@ export async function deleteTask(id) {
 
 export async function getMoods(startDate, endDate) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('moods')
@@ -200,7 +207,7 @@ export async function getMoods(startDate, endDate) {
     .lte('date', endDate)
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function setMood(date, value) {
@@ -226,15 +233,16 @@ export async function setMood(date, value) {
 
 export async function getReflection(date) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
   
   const { data, error } = await supabase
     .from('reflections')
     .select('*')
     .eq('user_id', user.id)
     .eq('date', date)
-    .single()
+    .maybeSingle()
   
-  if (error && error.code !== 'PGRST116') throw error
+  if (error) throw error
   return data
 }
 
@@ -262,15 +270,16 @@ export async function saveReflection(date, reflection) {
 
 export async function getNote(date) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
   
   const { data, error } = await supabase
     .from('notes')
     .select('*')
     .eq('user_id', user.id)
     .eq('date', date)
-    .single()
+    .maybeSingle()
   
-  if (error && error.code !== 'PGRST116') throw error
+  if (error) throw error
   return data
 }
 
@@ -298,6 +307,7 @@ export async function saveNote(date, content) {
 
 export async function getGratitudes() {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('gratitude')
@@ -307,7 +317,7 @@ export async function getGratitudes() {
     .limit(50)
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function createGratitude(text, date) {
@@ -331,6 +341,7 @@ export async function createGratitude(text, date) {
 
 export async function getHabits() {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('habits')
@@ -339,7 +350,7 @@ export async function getHabits() {
     .order('position', { ascending: true })
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function createHabit(name) {
@@ -370,7 +381,7 @@ export async function getHabitLogs(habitIds, year, month) {
     .lte('date', endDate)
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function toggleHabitLog(habitId, date) {
@@ -403,6 +414,7 @@ export async function toggleHabitLog(habitId, date) {
 
 export async function getEvents(startDate, endDate) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   
   const { data, error } = await supabase
     .from('events')
@@ -412,7 +424,7 @@ export async function getEvents(startDate, endDate) {
     .lte('date', endDate)
   
   if (error) throw error
-  return data
+  return data || []
 }
 
 export async function createEvent(event) {
@@ -435,15 +447,16 @@ export async function createEvent(event) {
 
 export async function getWeekReflection(weekStart) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
   
   const { data, error } = await supabase
     .from('week_reflections')
     .select('*')
     .eq('user_id', user.id)
     .eq('week_start', weekStart)
-    .single()
+    .maybeSingle()
   
-  if (error && error.code !== 'PGRST116') throw error
+  if (error) throw error
   return data
 }
 
@@ -471,6 +484,7 @@ export async function saveWeekReflection(weekStart, reflection) {
 
 export async function getMonthReflection(year, month) {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
   
   const { data, error } = await supabase
     .from('month_reflections')
@@ -478,9 +492,9 @@ export async function getMonthReflection(year, month) {
     .eq('user_id', user.id)
     .eq('year', year)
     .eq('month', month)
-    .single()
+    .maybeSingle()
   
-  if (error && error.code !== 'PGRST116') throw error
+  if (error) throw error
   return data
 }
 
