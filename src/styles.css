@@ -30,6 +30,7 @@ body {
   font-family: var(--sans);
   font-size: 14px;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ── Auth Screen ── */
@@ -65,7 +66,11 @@ body {
 .auth-footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--text3); }
 
 /* ── Layout ── */
-#app { display: flex; min-height: 100vh; flex-direction: column; }
+#app {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: row;
+}
 
 /* ── Mobile Header ── */
 #mobile-header {
@@ -138,6 +143,7 @@ body {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -162,7 +168,13 @@ body {
 .btn-small { padding: 6px 12px; font-size: 11px; }
 
 /* ── Main ── */
-#main { flex: 1; overflow-y: auto; background: var(--bg); }
+#main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  min-width: 0;
+}
 
 /* ── Views ── */
 .view { display: none; padding: 32px 40px; max-width: 960px; }
@@ -244,6 +256,9 @@ textarea.input { width: 100%; resize: vertical; min-height: 80px; line-height: 1
 .task-del { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text3); font-size: 14px; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
 .task-item:hover .task-del { opacity: 1; }
 .task-del:hover { color: var(--red); }
+
+.task-time { font-size: 11px; color: var(--accent); font-weight: 500; flex-shrink: 0; }
+.task-notes { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
 /* ── Reflections ── */
 .reflection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
