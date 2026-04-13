@@ -5,6 +5,8 @@ import * as api from './api.js'
 let currentUser = null
 let goals = []
 let tasks = []
+let calendarTasks = []
+let weekTasks = []
 let gratitudes = []
 let events = []
 let goalFilter = 'all'
@@ -48,6 +50,11 @@ function getWeekEnd(d) {
   const day = date.getDay()
   date.setDate(date.getDate() + (6 - day))
   return date
+}
+
+function formatTime(time) {
+  if (!time) return ''
+  return time.substring(0, 5)
 }
 
 // ─── QUOTES ──────────────────────────────────────────────────────
@@ -195,6 +202,55 @@ window.navigate = function(view) {
   if (view === 'monthly') loadMonthly()
 }
 
+// ─── TASK MODAL ──────────────────────────────────────────────────
+window.openTaskModal = function(presetDate = null) {
+  document.getElementById('taskModalTitle').textContent = 'Nova tarefa'
+  document.getElementById('tText').value = ''
+  document.getElementById('tDate').value = presetDate || todayKey
+  document.getElementById('tTime').value = ''
+  document.getElementById('tCat').value = 'pessoal'
+  document.getElementById('tNotes').value = ''
+  document.getElementById('taskModal').classList.add('open')
+}
+
+window.openTaskModalForDate = function() {
+  const date = selectedDate ? dateKey(selectedDate) : todayKey
+  openTaskModal(date)
+}
+
+window.closeTaskModal = function() {
+  document.getElementById('taskModal').classList.remove('open')
+}
+
+window.saveTask = async function() {
+  const text = document.getElementById('tText').value.trim()
+  if (!text) return
+  
+  const taskData = {
+    text,
+    date: document.getElementById('tDate').value,
+    time: document.getElementById('tTime').value || null,
+    category: document.getElementById('tCat').value,
+    notes: document.getElementById('tNotes').value || null
+  }
+  
+  try {
+    await api.createTask(taskData)
+    closeTaskModal()
+    toast('Tarefa criada ✓')
+    
+    // Refresh current view
+    const activeView = document.querySelector('.view.active')?.id
+    if (activeView === 'view-dashboard') loadDashboard()
+    else if (activeView === 'view-daily') loadDaily()
+    else if (activeView === 'view-calendar') loadCalendar()
+    else if (activeView === 'view-weekly') loadWeekly()
+  } catch (err) {
+    console.error('Error saving task:', err)
+    toast('Erro ao criar tarefa')
+  }
+}
+
 // ─── DASHBOARD ───────────────────────────────────────────────────
 async function loadDashboard() {
   document.getElementById('todayLabel').textContent = fmtDate(today) + ' — ' + daysNames[today.getDay()]
@@ -278,11 +334,19 @@ async function loadDaily() {
       document.getElementById('r_emotions').value = reflection.emotions || ''
       document.getElementById('r_selfcare').value = reflection.selfcare || ''
       document.getElementById('r_evening').value = reflection.evening || ''
+    } else {
+      document.getElementById('r_morning').value = ''
+      document.getElementById('r_thoughts').value = ''
+      document.getElementById('r_emotions').value = ''
+      document.getElementById('r_selfcare').value = ''
+      document.getElementById('r_evening').value = ''
     }
     
     const note = await api.getNote(todayKey)
     if (note) {
       document.getElementById('freeNotes').value = note.content || ''
+    } else {
+      document.getElementById('freeNotes').value = ''
     }
   } catch (err) {
     console.error('Error loading daily:', err)
@@ -293,7 +357,7 @@ function renderTasks() {
   const list = document.getElementById('taskList')
   
   if (tasks.length === 0) {
-    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px;text-align:center">Nenhuma tarefa ainda</div>'
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px;text-align:center">Nenhuma tarefa para hoje. <a href="#" onclick="openTaskModal();return false" style="color:var(--accent)">Criar uma?</a></div>'
     return
   }
   
@@ -302,40 +366,29 @@ function renderTasks() {
       <div class="task-check" onclick="toggleTask('${t.id}')">
         ${t.done ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M1.5 5l2.5 2.5 4.5-5"/></svg>' : ''}
       </div>
-      <div class="task-text">${t.text}</div>
+      <div style="flex:1;min-width:0">
+        <div class="task-text">${t.text}</div>
+        ${t.notes ? `<div class="task-notes">${t.notes}</div>` : ''}
+      </div>
+      ${t.time ? `<div class="task-time">${formatTime(t.time)}</div>` : ''}
       <div class="task-tag ${t.category}">${t.category}</div>
       <div class="task-del" onclick="deleteTask('${t.id}')">✕</div>
     </div>
   `).join('')
 }
 
-window.addTask = async function() {
-  const input = document.getElementById('taskInput')
-  const text = input.value.trim()
-  if (!text) return
-  
-  const category = document.getElementById('taskCat').value
-  
-  try {
-    const task = await api.createTask({ text, category, date: todayKey })
-    tasks.push(task)
-    input.value = ''
-    renderTasks()
-    toast('Tarefa adicionada ✓')
-  } catch (err) {
-    console.error('Error adding task:', err)
-    toast('Erro ao adicionar tarefa')
-  }
-}
-
 window.toggleTask = async function(id) {
-  const task = tasks.find(t => t.id === id)
+  const task = tasks.find(t => t.id === id) || calendarTasks.find(t => t.id === id) || weekTasks.find(t => t.id === id)
   if (!task) return
   
   try {
     await api.updateTask(id, { done: !task.done })
     task.done = !task.done
-    renderTasks()
+    
+    const activeView = document.querySelector('.view.active')?.id
+    if (activeView === 'view-daily') renderTasks()
+    else if (activeView === 'view-calendar') renderDayTasks()
+    else if (activeView === 'view-weekly') renderWeekTasks()
   } catch (err) {
     console.error('Error toggling task:', err)
   }
@@ -345,7 +398,17 @@ window.deleteTask = async function(id) {
   try {
     await api.deleteTask(id)
     tasks = tasks.filter(t => t.id !== id)
-    renderTasks()
+    calendarTasks = calendarTasks.filter(t => t.id !== id)
+    weekTasks = weekTasks.filter(t => t.id !== id)
+    
+    const activeView = document.querySelector('.view.active')?.id
+    if (activeView === 'view-daily') renderTasks()
+    else if (activeView === 'view-calendar') {
+      renderCalendarDots()
+      renderDayTasks()
+    }
+    else if (activeView === 'view-weekly') renderWeekTasks()
+    
     toast('Tarefa removida')
   } catch (err) {
     console.error('Error deleting task:', err)
@@ -451,9 +514,9 @@ async function loadCalendarData() {
   const endDate = new Date(year, month + 1, 0)
   
   try {
-    events = await api.getEvents(dateKey(startDate), dateKey(endDate))
+    calendarTasks = await api.getTasksRange(dateKey(startDate), dateKey(endDate))
     renderCalendarDots()
-    renderDayEvents()
+    renderDayTasks()
   } catch (err) {
     console.error('Error loading calendar:', err)
   }
@@ -462,33 +525,45 @@ async function loadCalendarData() {
 function renderCalendarDots() {
   document.querySelectorAll('.calendar-day-dots').forEach(el => el.innerHTML = '')
   
-  events.forEach(e => {
-    const dotsEl = document.getElementById('dots-' + e.date)
+  const tasksByDate = {}
+  calendarTasks.forEach(t => {
+    if (!tasksByDate[t.date]) tasksByDate[t.date] = []
+    tasksByDate[t.date].push(t)
+  })
+  
+  Object.keys(tasksByDate).forEach(date => {
+    const dotsEl = document.getElementById('dots-' + date)
     if (dotsEl) {
-      dotsEl.innerHTML += '<div class="calendar-dot event"></div>'
+      const count = tasksByDate[date].length
+      const hasPending = tasksByDate[date].some(t => !t.done)
+      dotsEl.innerHTML += `<div class="calendar-dot task" style="background:${hasPending ? 'var(--blue)' : 'var(--green)'}" title="${count} tarefa${count > 1 ? 's' : ''}"></div>`
     }
   })
 }
 
-function renderDayEvents() {
+function renderDayTasks() {
   if (!selectedDate) return
   
   const key = dateKey(selectedDate)
-  const dayEvents = events.filter(e => e.date === key)
-  const container = document.getElementById('dayEvents')
+  const dayTasks = calendarTasks.filter(t => t.date === key)
+  const container = document.getElementById('dayTasks')
   
-  if (dayEvents.length === 0) {
-    container.innerHTML = '<div class="no-events">Nenhum evento neste dia</div>'
+  if (dayTasks.length === 0) {
+    container.innerHTML = '<div class="no-events">Nenhuma tarefa neste dia</div>'
     return
   }
   
-  container.innerHTML = dayEvents.map(e => `
-    <div class="event-item">
-      <div class="event-dot ${e.type}"></div>
-      <div class="event-info">
-        <div class="event-title">${e.title}</div>
-        ${e.notes ? `<div class="event-notes">${e.notes}</div>` : ''}
+  container.innerHTML = dayTasks.map(t => `
+    <div class="task-item ${t.done ? 'done' : ''}" style="margin-bottom:6px">
+      <div class="task-check" onclick="toggleTask('${t.id}')">
+        ${t.done ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M1.5 5l2.5 2.5 4.5-5"/></svg>' : ''}
       </div>
+      <div style="flex:1;min-width:0">
+        <div class="task-text">${t.text}</div>
+        ${t.notes ? `<div class="task-notes">${t.notes}</div>` : ''}
+      </div>
+      ${t.time ? `<div class="task-time">${formatTime(t.time)}</div>` : ''}
+      <div class="task-del" onclick="deleteTask('${t.id}')">✕</div>
     </div>
   `).join('')
 }
@@ -503,9 +578,8 @@ window.selectDay = function(key) {
   selectedDate = new Date(key + 'T12:00:00')
   document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'))
   document.querySelector(`[data-date="${key}"]`)?.classList.add('selected')
-  document.getElementById('eventDate').value = key
   updateSelectedDayLabel()
-  renderDayEvents()
+  renderDayTasks()
 }
 
 window.changeMonth = function(delta) {
@@ -549,7 +623,6 @@ window.saveEvent = async function() {
     events.push(newEvent)
     closeEventModal()
     renderCalendarDots()
-    renderDayEvents()
     toast('Evento criado ✓')
   } catch (err) {
     console.error('Error saving event:', err)
@@ -569,9 +642,16 @@ async function loadWeekly() {
   try {
     const startKey = dateKey(weekStartDate)
     const endKey = dateKey(weekEnd)
-    const weekMoods = await api.getMoods(startKey, endKey)
+    
+    const [weekMoods, tasksData] = await Promise.all([
+      api.getMoods(startKey, endKey),
+      api.getTasksRange(startKey, endKey)
+    ])
+    
+    weekTasks = tasksData
     
     renderWeekDays(weekMoods)
+    renderWeekTasks()
     
     const weekReflection = await api.getWeekReflection(startKey)
     if (weekReflection) {
@@ -596,15 +676,64 @@ function renderWeekDays(moods) {
     const key = dateKey(d)
     const isToday = key === todayKey
     const mood = moods.find(m => m.date === key)
+    const dayTasks = weekTasks.filter(t => t.date === key)
+    const pending = dayTasks.filter(t => !t.done).length
     
     container.innerHTML += `
-      <div class="week-day-card ${isToday ? 'today' : ''}" onclick="navigate('daily')">
+      <div class="week-day-card ${isToday ? 'today' : ''}" onclick="openTaskModal('${key}')">
         <div class="week-day-name">${daysNames[d.getDay()]}</div>
         <div class="week-day-num">${d.getDate()}</div>
-        ${mood ? `<div class="week-day-mood">${moodEmojis[mood.value - 1]}</div>` : '<div class="week-day-mood" style="opacity:0.3">—</div>'}
+        ${dayTasks.length > 0 
+          ? `<div class="week-day-tasks">${pending > 0 ? pending + ' pendente' + (pending > 1 ? 's' : '') : '✓'}</div>`
+          : '<div class="week-day-tasks" style="opacity:0.3">—</div>'
+        }
+        ${mood ? `<div class="week-day-mood">${moodEmojis[mood.value - 1]}</div>` : ''}
       </div>
     `
   }
+}
+
+function renderWeekTasks() {
+  const container = document.getElementById('weekTasksList')
+  
+  if (weekTasks.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:16px;text-align:center">Nenhuma tarefa esta semana. <a href="#" onclick="openTaskModal();return false" style="color:var(--accent)">Criar uma?</a></div>'
+    return
+  }
+  
+  const grouped = {}
+  weekTasks.forEach(t => {
+    if (!grouped[t.date]) grouped[t.date] = []
+    grouped[t.date].push(t)
+  })
+  
+  const sortedDates = Object.keys(grouped).sort()
+  
+  container.innerHTML = sortedDates.map(date => {
+    const d = new Date(date + 'T12:00:00')
+    const isToday = date === todayKey
+    const dayName = isToday ? 'Hoje' : `${daysNames[d.getDay()]}, ${d.getDate()}`
+    
+    return `
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;text-transform:uppercase;color:${isToday ? 'var(--accent)' : 'var(--text3)'};margin-bottom:8px;font-weight:500">${dayName}</div>
+        ${grouped[date].map(t => `
+          <div class="task-item ${t.done ? 'done' : ''}" style="margin-bottom:6px">
+            <div class="task-check" onclick="toggleTask('${t.id}')">
+              ${t.done ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2"><path d="M1.5 5l2.5 2.5 4.5-5"/></svg>' : ''}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="task-text">${t.text}</div>
+              ${t.notes ? `<div class="task-notes">${t.notes}</div>` : ''}
+            </div>
+            ${t.time ? `<div class="task-time">${formatTime(t.time)}</div>` : ''}
+            <div class="task-tag ${t.category}">${t.category}</div>
+            <div class="task-del" onclick="deleteTask('${t.id}')">✕</div>
+          </div>
+        `).join('')}
+      </div>
+    `
+  }).join('')
 }
 
 window.changeWeek = function(delta) {
